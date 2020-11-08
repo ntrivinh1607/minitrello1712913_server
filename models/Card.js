@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const CardSchema = mongoose.Schema({
 	subject:{
 		type: String,
+		unique: true,
 		require: true,
 	},
 	content:{
