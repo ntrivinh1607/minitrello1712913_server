@@ -21,5 +21,9 @@ const BoardSchema = Schema({
 	wentWell: [{ type: Schema.Types.ObjectId, ref: 'Card' }],
 	toImprove: [{ type: Schema.Types.ObjectId, ref: 'Card' }],
 	actionItems: [{ type: Schema.Types.ObjectId, ref: 'Card' }],
+	isDelete:{
+		type: Boolean,
+		default: 0,
+	},
 });
 module.exports = mongoose.model('Board', BoardSchema);

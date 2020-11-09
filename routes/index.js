@@ -3,17 +3,16 @@ const router = express.Router();
 
 const mongoose = require('mongoose');
 const passport = require('passport');
-require('../auth/passport')(passport);
+const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const Board = require('../models/Board');
 const Card = require('../models/Card');
-const User = mongoose.model('User')
 const jwtoken = require("../auth/jwt")
 /* GET home page. */
 router.get('/', jwtoken.tokenVerify, async (req, res) => {
 	try {
 		const username = req.username;
-		const user = await User.findOne({username:username}).populate('userboards');
+		const user = await User.findOne({username:username}).populate({path:'userboards', match: {isDelete:false}, select:'_id description title date'});
 		const boards = user.userboards;
 		res.status(200).send(boards);
 	}
@@ -25,7 +24,7 @@ router.get('/', jwtoken.tokenVerify, async (req, res) => {
 router.get('/:id', jwtoken.tokenVerify, async (req, res) => {
 	try {
 		const id = req.params.id;
-		const boards = await Board.findById(id).populate('wentWell').populate('toImprove').populate('actionItems');
+		const boards = await Board.findById(id).populate({path:'wentWell', match: {isDelete:false}}).populate({path:'toImprove', match: {isDelete:false}}).populate({path:'actionItems', match: {isDelete:false}});
 		res.status(200).send(boards);
 	}
 	catch (err)
@@ -81,18 +80,17 @@ router.post('/addCard/:id', jwtoken.tokenVerify, async (req, res) => {
 	}
 });
 
-router.post('/updateBoard/:id', jwtoken.tokenVerify, (req, res) => {
+router.post('/updateBoard/:id', jwtoken.tokenVerify, async (req, res) => {
 	const board = {
 		title: req.body.field1,
 		description: req.body.field2,
 	};
 	const id = req.params.id;
-	const result = Board.findOneAndUpdate({_id:id}, board, (err, todo) => {
+	const result = await Board.findOneAndUpdate({_id:id}, board, (err, todo) => {
 	// Handle any possible database errors
-    if (err) return res.status(500).send(err);
-    return res.status(200).send({success: true, message:"Updated"});
-    } );
-
+	    if (err) return res.status(500).send(err);
+	    return res.status(200).send({success: true, message:"Updated"});
+    });
 });
 
 router.post('/updateCard/:id', jwtoken.tokenVerify, (req, res) => {
@@ -103,8 +101,26 @@ router.post('/updateCard/:id', jwtoken.tokenVerify, (req, res) => {
 	const id = req.params.id;
 	const result = Card.findOneAndUpdate({_id:id}, card, (err, todo) => {
 	// Handle any possible database errors
-    if (err) return res.status(500).send(err);
-    return res.status(200).send({success: true, message:"Updated"});
+	    if (err) return res.status(500).send(err);
+	    return res.status(200).send({success: true, message:"Updated"});
+    });
+});
+
+router.post('/deleteCard/:id', jwtoken.tokenVerify, (req, res) => {
+	const id = req.params.id;
+	const result = Card.findOneAndUpdate({_id:id}, {isDelete:true}, (err, todo) => {
+	// Handle any possible database errors
+	    if (err) return res.status(500).send(err);
+	    return res.status(200).send({success: true, message:"Updated"});
+    });
+});
+
+router.post('/deleteBoard/:id', jwtoken.tokenVerify, (req, res) => {
+	const id = req.params.id;
+	const result = Board.findOneAndUpdate({_id:id}, {isDelete:true}, (err, todo) => {
+	// Handle any possible database errors
+	    if (err) return res.status(500).send(err);
+	    return res.status(200).send({success: true, message:"Updated"});
     });
 });
 
@@ -158,4 +174,14 @@ router.post('/signin', function(req, res) {
 		}
 	});
 });
+//facebook
+router.get('/auth/facebook', passport.authenticate('facebook'));
+
+router.get('/auth/facebook/callback',
+  passport.authenticate('facebook', { failureRedirect: '/login' }),
+  function(req, res) {
+    // Successful authentication, redirect home.
+    console.log("success");
+    res.redirect('/');
+  });
 module.exports = router;

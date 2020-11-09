@@ -14,5 +14,9 @@ const CardSchema = mongoose.Schema({
 		type: Date,
 		default: Date.now,
 	},
+	isDelete:{
+		type: Boolean,
+		default: 0,
+	},
 });
 module.exports = mongoose.model('Card', CardSchema);
